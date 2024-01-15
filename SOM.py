@@ -1,51 +1,25 @@
-
-import sys
-sys.path.insert(0, '../')
-from minisom import MiniSom
-
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
+import sompy
 
-# read the image
-img = plt.imread('style.jpg')
+# Defina o conjunto de dados
+data = np.array([
+    [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0],
+    [1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+])
 
-# reshaping the pixels matrix
-pixels = np.reshape(img, (img.shape[0]*img.shape[1], 3))
+# Configurar e treinar a Rede SOM
+map_size = (5, 5)  # Tamanho da grade SOM
+som = SOMFactory.build(data, mapsize=map_size, initialization='random')
+som.train(n_job=1, verbose='info')  # n_job=1 para evitar problemas com alguns ambientes
 
-# SOM initialization and training
-print('training...')
-som = MiniSom(3, 3, 3, sigma=1.,
-              learning_rate=0.2, neighborhood_function='bubble')  # 3x3 = 9 final colors
-som.random_weights_init(pixels)
-starting_weights = som.get_weights().copy()  # saving the starting weights
-som.train_random(pixels, 500)
-
-print('quantization...')
-qnt = som.quantization(pixels)  # quantize each pixels of the image
-print('building new image...')
-clustered = np.zeros(img.shape)
-for i, q in enumerate(qnt):  # place the quantized values into a new image
-    dims=(img.shape[0], img.shape[1])
-    clustered[np.unravel_index(i,dims)] = q
-print('done.')
-
-# show the result
-plt.figure(figsize=(7, 7))
-plt.figure(1)
-plt.subplot(221)
-plt.title('original')
-plt.imshow(img)
-plt.subplot(222)
-plt.title('result')
-plt.imshow(clustered)
-
-plt.subplot(223)
-plt.title('initial colors')
-plt.imshow(starting_weights, interpolation='none')
-plt.subplot(224)
-plt.title('learned colors')
-plt.imshow(som.get_weights(), interpolation='none')
-
-plt.tight_layout()
-plt.show()
+# Obter a visualização da grade SOM
+from sompy.visualization.mapview import View2D
+view2D = View2D(map_size[0], map_size[1], 'SOM Map')
+view2D.show(som, col_sz=4, which_dim='all', desnormalize=True)
